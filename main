@@ -1,0 +1,249 @@
+import discord
+from discord.ext import commands
+import json
+import os
+
+# =========================
+# ⚙ НАСТРОЙКИ
+# =========================
+
+TOKEN = "MTQ0MjkwMDg5MzUzNTE3NDg2Nw.GfHqAC.AkFv_iOtnU2X_PaiJJiKTwqx0LCnmB7J3aFXxM"
+XP_FILE = "xp_data.json"
+
+ALLOWED_ROLES = {
+    1443204937562718209,
+    1443826467149451375,
+    1443205373799698463,
+    1442937053099856044
+}
+
+LOG_CHANNEL_ID = 1439359916174213261
+
+# =========================
+# 📁 ФАЙЛ XP
+# =========================
+
+if not os.path.exists(XP_FILE):
+    with open(XP_FILE, "w", encoding="utf-8") as f:
+        json.dump({}, f, ensure_ascii=False, indent=4)
+
+with open(XP_FILE, "r", encoding="utf-8") as f:
+    xp_data = json.load(f)
+
+# =========================
+# 🤖 БОТ
+# =========================
+
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+
+def save():
+    with open(XP_FILE, "w", encoding="utf-8") as f:
+        json.dump(xp_data, f, ensure_ascii=False, indent=4)
+
+
+def allowed(ctx):
+    return any(role.id in ALLOWED_ROLES for role in ctx.author.roles)
+
+
+# =====================================================
+# 🎁 ВЫДАЧА XP ОДНОМУ ПОЛЬЗОВАТЕЛЮ — !хпгив
+# =====================================================
+@bot.command(name="хпгив")
+async def give_xp(ctx, amount: int, reason: str, member: discord.Member):
+    if not allowed(ctx):
+        return await ctx.send("❌ Нет прав!")
+
+    uid = str(member.id)
+
+    if uid not in xp_data:
+        xp_data[uid] = {"xp": 0, "cake": 0}
+
+    xp_data[uid]["xp"] += amount
+    save()
+
+    emb = discord.Embed(
+        title="🎄 Выдача XP!",
+        description=f"{member.mention} получил **{amount} XP**",
+        color=discord.Color.green()
+    )
+    emb.add_field(name="Причина:", value=reason)
+    emb.set_footer(text="С Новым годом! ❄✨")
+
+    await ctx.send(embed=emb)
+
+    log = bot.get_channel(LOG_CHANNEL_ID)
+    if log:
+        await log.send(embed=emb)
+
+
+# =====================================================
+# 🍰 ВЫДАЧА ТОРТИКОВ ОДНОМУ — !тортгив
+# =====================================================
+@bot.command(name="тортгив")
+async def give_cake(ctx, amount: int, reason: str, member: discord.Member):
+    if not allowed(ctx):
+        return await ctx.send("❌ Нет прав!")
+
+    uid = str(member.id)
+
+    if uid not in xp_data:
+        xp_data[uid] = {"xp": 0, "cake": 0}
+
+    xp_data[uid]["cake"] += amount
+    save()
+
+    emb = discord.Embed(
+        title="🎂 Выдача тортиков!",
+        description=f"{member.mention} получил **{amount} 🍰**",
+        color=discord.Color.purple()
+    )
+    emb.add_field(name="Причина:", value=reason)
+    emb.set_footer(text="Сладкого Нового года! 🎄✨")
+
+    await ctx.send(embed=emb)
+
+    log = bot.get_channel(LOG_CHANNEL_ID)
+    if log:
+        await log.send(embed=emb)
+
+
+# =====================================================
+# 🎧 ВЫДАЧА XP ВСЕМ В ВОЙСЕ — !хпвойс
+# =====================================================
+@bot.command(name="хпвойс")
+async def give_xp_voice(ctx, amount: int, reason: str):
+    if not allowed(ctx):
+        return await ctx.send("❌ Нет прав!")
+
+    if ctx.author.voice is None:
+        return await ctx.send("❌ Ты не в голосовом канале!")
+
+    vc = ctx.author.voice.channel
+    members = vc.members
+    count = 0
+
+    for m in members:
+        if m.bot:
+            continue
+
+        uid = str(m.id)
+
+        if uid not in xp_data:
+            xp_data[uid] = {"xp": 0, "cake": 0}
+
+        xp_data[uid]["xp"] += amount
+        count += 1
+
+    save()
+
+    emb = discord.Embed(
+        title="🎧 XP всему войсу!",
+        description=f"Канал: **{vc.name}**\nВыдано: **{amount} XP** каждому",
+        color=discord.Color.green()
+    )
+    emb.add_field(name="Количество участников:", value=count)
+    emb.add_field(name="Причина:", value=reason)
+    emb.set_footer(text="С Новым годом! ❄✨")
+
+    await ctx.send(embed=emb)
+
+    log = bot.get_channel(LOG_CHANNEL_ID)
+    if log:
+        await log.send(embed=emb)
+
+
+# =====================================================
+# 🎧 ВЫДАЧА ТОРТИКОВ ВСЕМ В ВОЙСЕ — !тортвойс
+# =====================================================
+@bot.command(name="тортвойс")
+async def give_cake_voice(ctx, amount: int, reason: str):
+    if not allowed(ctx):
+        return await ctx.send("❌ Нет прав!")
+
+    if ctx.author.voice is None:
+        return await ctx.send("❌ Ты не в голосовом канале!")
+
+    vc = ctx.author.voice.channel
+    members = vc.members
+    count = 0
+
+    for m in members:
+        if m.bot:
+            continue
+
+        uid = str(m.id)
+
+        if uid not in xp_data:
+            xp_data[uid] = {"xp": 0, "cake": 0}
+
+        xp_data[uid]["cake"] += amount
+        count += 1
+
+    save()
+
+    emb = discord.Embed(
+        title="🎂 Тортики всему войсу!",
+        description=f"Канал: **{vc.name}**\nВыдано: **{amount} 🍰** каждому",
+        color=discord.Color.purple()
+    )
+    emb.add_field(name="Количество участников:", value=count)
+    emb.add_field(name="Причина:", value=reason)
+    emb.set_footer(text="Сладкого Нового года! 🎄✨")
+
+    await ctx.send(embed=emb)
+
+    log = bot.get_channel(LOG_CHANNEL_ID)
+    if log:
+        await log.send(embed=emb)
+
+
+# =====================================================
+# 📊 ПРОВЕРКА XP — !хпчек
+# =====================================================
+@bot.command(name="хпчек")
+async def xp_check(ctx, member: discord.Member):
+    uid = str(member.id)
+
+    if uid not in xp_data:
+        xp_data[uid] = {"xp": 0, "cake": 0}
+        save()
+
+    xp = xp_data[uid]["xp"]
+
+    emb = discord.Embed(
+        title="📊 Проверка XP",
+        description=f"У **{member.display_name}**: **{xp} XP**",
+        color=discord.Color.blue()
+    )
+    await ctx.send(embed=emb)
+
+
+# =====================================================
+# 🍰 ПРОВЕРКА ТОРТИКОВ — !тортчек
+# =====================================================
+@bot.command(name="тортчек")
+async def cake_check(ctx, member: discord.Member):
+    uid = str(member.id)
+
+    if uid not in xp_data:
+        xp_data[uid] = {"xp": 0, "cake": 0}
+        save()
+
+    cake = xp_data[uid]["cake"]
+
+    emb = discord.Embed(
+        title="🍰 Проверка тортиков",
+        description=f"У **{member.display_name}**: **{cake} 🍰**",
+        color=discord.Color.orange()
+    )
+    await ctx.send(embed=emb)
+
+
+
+# =========================
+# ▶ СТАРТ БОТА
+# =========================
+
+bot.run(TOKEN)
