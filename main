@@ -7,7 +7,7 @@ import os
 # ⚙ НАСТРОЙКИ
 # =========================
 
-TOKEN = "MTQ0MjkwMDg5MzUzNTE3NDg2Nw.GfHqAC.AkFv_iOtnU2X_PaiJJiKTwqx0LCnmB7J3aFXxM"
+TOKEN = 
 XP_FILE = "xp_data.json"
 
 ALLOWED_ROLES = {
